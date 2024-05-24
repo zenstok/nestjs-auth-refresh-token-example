@@ -1,0 +1,43 @@
+version: '3.7'
+
+services:
+  backend:
+    container_name: nestjs-auth-refresh-token-example-backend
+    image: nestjs-auth-refresh-token-example-backend-image
+    build:
+      context: ./../
+      dockerfile: ./docker/Dockerfile
+      target: development
+    volumes:
+      - ./../:/usr/src/app
+      - backend-node-modules:/usr/src/app/node_modules
+      - backend-dist:/usr/src/app/dist
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    networks:
+      - mainnet
+    depends_on:
+      - postgres
+    restart: unless-stopped
+  postgres:
+    container_name: nestjs-auth-refresh-token-example-postgres
+    image: postgres:16.2
+    networks:
+      - mainnet
+    environment:
+      TZ: ${DB_TIMEZONE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PG_DATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+networks:
+  mainnet:
+volumes:
+  pgdata:
+  backend-node-modules:
+  backend-dist:
