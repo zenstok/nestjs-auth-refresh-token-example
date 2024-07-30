@@ -2,7 +2,7 @@
 
 This is an example of how to implement refresh tokens in NestJS.
 
-This project is based on the article ["How to Implement Refresh Tokens with Token Rotation in NestJS"](https://dev.to/zenstok/nestjs-dependency-injection-in-worker-threads-5deh).
+This project is based on the article ["How to Implement Refresh Tokens with Token Rotation in NestJS"](https://dev.to/zenstok/how-to-implement-refresh-tokens-with-token-rotation-in-nestjs-1deg).
 
 
 ## Installation
