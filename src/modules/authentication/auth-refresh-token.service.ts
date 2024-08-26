@@ -6,11 +6,13 @@ import { AuthRefreshToken } from './entities/auth-refresh-token.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '../../config/env/configuration';
+import { CryptoService } from '../crypto/crypto.service';
 
 @Injectable()
 export class AuthRefreshTokenService {
   constructor(
     private jwtService: JwtService,
+    private cryptoService: CryptoService,
     private configService: ConfigService<EnvironmentVariables>,
     @InjectRepository(AuthRefreshToken)
     private authRefreshTokenRepository: Repository<AuthRefreshToken>,
@@ -30,14 +32,16 @@ export class AuthRefreshTokenService {
     );
 
     if (currentRefreshToken && currentRefreshTokenExpiresAt) {
+      const hashedRefreshToken =
+        this.cryptoService.generateSha256HashBase64(currentRefreshToken);
       if (
-        await this.isRefreshTokenBlackListed(currentRefreshToken, authUser.id)
+        await this.isRefreshTokenBlackListed(hashedRefreshToken, authUser.id)
       ) {
         throw new UnauthorizedException('Invalid refresh token.');
       }
 
       await this.authRefreshTokenRepository.insert({
-        refreshToken: currentRefreshToken,
+        hashedRefreshToken,
         expiresAt: currentRefreshTokenExpiresAt,
         userId: authUser.id,
       });
@@ -46,8 +50,14 @@ export class AuthRefreshTokenService {
     return newRefreshToken;
   }
 
-  private isRefreshTokenBlackListed(refreshToken: string, userId: number) {
-    return this.authRefreshTokenRepository.existsBy({ refreshToken, userId });
+  private isRefreshTokenBlackListed(
+    hashedRefreshToken: string,
+    userId: number,
+  ) {
+    return this.authRefreshTokenRepository.existsBy({
+      hashedRefreshToken,
+      userId,
+    });
   }
 
   async generateTokenPair(

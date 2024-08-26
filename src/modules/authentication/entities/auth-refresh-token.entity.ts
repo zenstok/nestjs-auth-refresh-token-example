@@ -3,8 +3,8 @@ import { User } from '../../user/entities/user.entity';
 
 @Entity({ name: 'auth_refresh_tokens' })
 export class AuthRefreshToken {
-  @PrimaryColumn({ name: 'refresh_token' })
-  refreshToken: string;
+  @PrimaryColumn({ name: 'hashed_refresh_token' })
+  hashedRefreshToken: string;
 
   @Column({ name: 'expires_at' })
   expiresAt: Date;
