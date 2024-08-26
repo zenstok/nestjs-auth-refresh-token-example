@@ -15,16 +15,17 @@ import { UserLoginDto } from '../user/dto/user-login.dto';
 import { Public } from './decorators/public.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { User } from './decorators/user.decorator';
-import { User as UserEntity } from '../user/entities/user.entity';
 import { Response, Request as ExpressRequest } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { AuthRefreshTokenService } from './auth-refresh-token.service';
+import { UserService } from '../user/user.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthenticationController {
   constructor(
+    private userService: UserService,
     private authenticationService: AuthenticationService,
     private authRefreshTokenService: AuthRefreshTokenService,
   ) {}
@@ -45,11 +46,11 @@ export class AuthenticationController {
   @Get('me')
   @UseInterceptors(ClassSerializerInterceptor)
   async me(
-    @User() authUser: UserEntity,
+    @User() authUser: Express.User,
     @Res({ passthrough: true }) res: Response,
   ) {
     res.header('Cache-Control', 'no-store');
-    return authUser;
+    return this.userService.findOne(authUser.id);
   }
 
   @Throttle({

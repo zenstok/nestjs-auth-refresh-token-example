@@ -10,28 +10,21 @@ export class JwtRefreshStrategy extends PassportStrategy(
   Strategy,
   'jwt-refresh',
 ) {
-  private readonly userService: UserService;
-
-  constructor(
-    userService: UserService,
-    configService: ConfigService<EnvironmentVariables>,
-  ) {
+  constructor(configService: ConfigService<EnvironmentVariables>) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get('jwtRefreshSecret'),
     });
-    this.userService = userService;
   }
 
   async validate(payload: any) {
-    const authUser = await this.userService.findOne(payload.sub);
-    if (!authUser) {
-      throw new UnauthorizedException();
+    if (!payload.sub || !payload.role) {
+      throw new UnauthorizedException('Invalid refresh jwt payload.');
     }
 
     return {
-      attributes: authUser,
+      attributes: { id: payload.sub, role: payload.role },
       refreshTokenExpiresAt: new Date(payload.exp * 1000),
     };
   }

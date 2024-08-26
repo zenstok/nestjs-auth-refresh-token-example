@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { AuthRefreshToken } from './entities/auth-refresh-token.entity';
@@ -18,12 +17,12 @@ export class AuthRefreshTokenService {
   ) {}
 
   async generateRefreshToken(
-    authUserId: number,
+    authUser: Express.User,
     currentRefreshToken?: string,
     currentRefreshTokenExpiresAt?: Date,
   ) {
     const newRefreshToken = this.jwtService.sign(
-      { sub: authUserId },
+      { sub: authUser.id, role: authUser.role },
       {
         secret: this.configService.get('jwtRefreshSecret'),
         expiresIn: '30d',
@@ -32,7 +31,7 @@ export class AuthRefreshTokenService {
 
     if (currentRefreshToken && currentRefreshTokenExpiresAt) {
       if (
-        await this.isRefreshTokenBlackListed(currentRefreshToken, authUserId)
+        await this.isRefreshTokenBlackListed(currentRefreshToken, authUser.id)
       ) {
         throw new UnauthorizedException('Invalid refresh token.');
       }
@@ -40,7 +39,7 @@ export class AuthRefreshTokenService {
       await this.authRefreshTokenRepository.insert({
         refreshToken: currentRefreshToken,
         expiresAt: currentRefreshTokenExpiresAt,
-        userId: authUserId,
+        userId: authUser.id,
       });
     }
 
@@ -52,16 +51,16 @@ export class AuthRefreshTokenService {
   }
 
   async generateTokenPair(
-    user: User,
+    user: Express.User,
     currentRefreshToken?: string,
     currentRefreshTokenExpiresAt?: Date,
   ) {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { sub: user.id, role: user.role };
 
     return {
       access_token: this.jwtService.sign(payload), // jwt module is configured in auth.module.ts for access token
       refresh_token: await this.generateRefreshToken(
-        user.id,
+        user,
         currentRefreshToken,
         currentRefreshTokenExpiresAt,
       ),

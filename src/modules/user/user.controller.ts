@@ -18,7 +18,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../authorization/decorators/roles.decorator';
 import Role from '../authorization/constants/role.enum';
-import { User as UserEntity } from './entities/user.entity';
 import { User } from '../authentication/decorators/user.decorator';
 
 @ApiTags('User')
@@ -51,7 +50,7 @@ export class UserController {
 
   @Roles(Role.Admin)
   @Delete(':id')
-  remove(@Param('id') id: string, @User() authUser: UserEntity) {
+  remove(@Param('id') id: string, @User() authUser: Express.User) {
     if (+id === authUser.id) {
       throw new UnprocessableEntityException('Cannot deleted yourself');
     }
