@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CryptoService } from '../crypto/crypto.service';
 import { UserService } from '../user/user.service';
 import { User } from '../user/entities/user.entity';
 import { AuthRefreshTokenService } from './auth-refresh-token.service';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthenticationService {
@@ -29,7 +30,11 @@ export class AuthenticationService {
     return null;
   }
 
-  login(user: User) {
-    return this.authRefreshTokenService.generateTokenPair(user);
+  login(res: Response, user?: Express.User) {
+    if (!user?.id) {
+      throw new InternalServerErrorException('User not set in request');
+    }
+
+    return this.authRefreshTokenService.generateTokenPair(user, res);
   }
 }

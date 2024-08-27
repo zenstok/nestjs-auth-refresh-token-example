@@ -10,7 +10,7 @@ declare const module: any;
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.enableCors({ origin: true });
+  app.enableCors({ origin: true, credentials: true }); // make sure you set the correct origin in production
   app.use(helmet());
   app.useGlobalPipes(
     new ValidationPipe({

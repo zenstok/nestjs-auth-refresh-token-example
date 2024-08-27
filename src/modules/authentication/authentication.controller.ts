@@ -4,7 +4,7 @@ import {
   Get,
   InternalServerErrorException,
   Post,
-  Request,
+  Req,
   Res,
   UseGuards,
   UseInterceptors,
@@ -15,11 +15,15 @@ import { UserLoginDto } from '../user/dto/user-login.dto';
 import { Public } from './decorators/public.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { User } from './decorators/user.decorator';
-import { Response, Request as ExpressRequest } from 'express';
+import { Response, Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { AuthRefreshTokenService } from './auth-refresh-token.service';
 import { UserService } from '../user/user.service';
+import {
+  cookieConfig,
+  extractRefreshTokenFromCookies,
+} from '../../api/constants/cookies';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -38,8 +42,8 @@ export class AuthenticationController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  login(@Request() req: any) {
-    return this.authenticationService.login(req.user);
+  login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    return this.authenticationService.login(res, req.user);
   }
 
   @ApiBearerAuth()
@@ -61,14 +65,25 @@ export class AuthenticationController {
   @Public()
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refresh-tokens')
-  refreshTokens(@Request() req: ExpressRequest) {
+  refreshTokens(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     if (!req.user) {
       throw new InternalServerErrorException();
     }
+
     return this.authRefreshTokenService.generateTokenPair(
       (req.user as any).attributes,
-      req.headers.authorization?.split(' ')[1],
+      res,
+      extractRefreshTokenFromCookies(req) as string,
       (req.user as any).refreshTokenExpiresAt,
     );
+  }
+
+  @Public()
+  @Post('clear-auth-cookie')
+  clearAuthCookie(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie(cookieConfig.refreshToken.name);
   }
 }

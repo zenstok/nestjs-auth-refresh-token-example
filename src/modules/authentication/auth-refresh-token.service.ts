@@ -7,6 +7,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '../../config/env/configuration';
 import { CryptoService } from '../crypto/crypto.service';
+import { Response } from 'express';
+import { cookieConfig } from '../../api/constants/cookies';
 
 @Injectable()
 export class AuthRefreshTokenService {
@@ -62,18 +64,26 @@ export class AuthRefreshTokenService {
 
   async generateTokenPair(
     user: Express.User,
+    res: Response,
     currentRefreshToken?: string,
     currentRefreshTokenExpiresAt?: Date,
   ) {
     const payload = { sub: user.id, role: user.role };
 
-    return {
-      access_token: this.jwtService.sign(payload), // jwt module is configured in auth.module.ts for access token
-      refresh_token: await this.generateRefreshToken(
+    res.cookie(
+      cookieConfig.refreshToken.name,
+      await this.generateRefreshToken(
         user,
         currentRefreshToken,
         currentRefreshTokenExpiresAt,
       ),
+      {
+        ...cookieConfig.refreshToken.options,
+      },
+    );
+
+    return {
+      access_token: this.jwtService.sign(payload), // jwt module is configured in auth.module.ts for access token
     };
   }
 
